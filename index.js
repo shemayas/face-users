@@ -1,5 +1,6 @@
 // map to array with objects faceId: ddd, name: ddd, email: ddd
 // how much time
+console.time("Time of process");
 
 const fs = require('fs'),
       Promise = require('bluebird');
@@ -22,6 +23,10 @@ readDir('./LEADS').then((dirFiles) => {
             return convertToJson(result, contents);
         });
     }, {}).then(function(total) {
+        // end the timer
+        console.timeEnd("Time of process");
+
+        // write results into file
         fs.writeFileSync("./result.json", JSON.stringify(Object.values(total), null, 4), function(err) {
             if(err) {
                 return console.log(err);
