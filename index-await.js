@@ -5,41 +5,30 @@ console.time("Time of process");
 const fs = require('fs'),
       Promise = require('bluebird');
 
-let files = [],
-    readDir = Promise.promisify(fs.readdir),
-    readFile = Promise.promisify(fs.readFile);
+
+const readDir = Promise.promisify(fs.readdir),
+      readFile = Promise.promisify(fs.readFile),
+      writeFile = Promise.promisify(fs.writeFile);
 
 // read directory with all files to process
-readDir('./LEADS').then((dirFiles) => {
-    files = dirFiles;
+(async () => {
+    const files = await readDir('./LEADS');
+    
+    const result = await files.reduce( async (result, fileName) => {
+        const contents = await readFile('./LEADS/' + fileName, "utf8");
+        return convertToJson(await result, contents);
+    }, {});
 
-}).catch((err) => {
-    console.log('error when tring to read file dir: ' + err);
-    return;
-}).then(() => {
-    // loop on files and process them
-    Promise.reduce(files, function(result, fileName) {
-        return readFile('./LEADS/' + fileName, "utf8").then(function(contents) {
-            return convertToJson(result, contents);
-        });
-    }, {}).then(function(total) {
-        // end the timer
-        console.timeEnd("Time of process");
-        
-        console.log("Rows count: " + Object.keys(total).length);
-        
-        // write results into file
-        fs.writeFileSync("./result.json", JSON.stringify(Object.values(total), null, 4), function(err) {
-            if(err) {
-                return console.log(err);
-            }
-        
-            console.log("The file was saved!");
-        });
-    });
-})
+    // end the timer
+    console.timeEnd("Time of process");
 
+    console.log("Number of items: " + Object.keys(result).length);
 
+    // write results into file
+    await writeFile("./result-await.json", JSON.stringify(Object.values(result), null, 4));
+
+    console.log("The file was saved!");
+})();
 
 /**
  * 
